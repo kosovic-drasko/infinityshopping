@@ -30,222 +30,217 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderMainServiceImpl implements OrderMainService {
-  private final Logger log = LoggerFactory.getLogger(OrderMainServiceImpl.class);
 
-  private final CartRepository cartRepository;
+    private final Logger log = LoggerFactory.getLogger(OrderMainServiceImpl.class);
 
-  private final OrderMainRepository orderMainRepository;
+    private final CartRepository cartRepository;
 
-  private final UserRepository userRepository;
+    private final OrderMainRepository orderMainRepository;
 
-  private final PaymentOrderMainRepository paymentOrderMainRepository;
+    private final UserRepository userRepository;
 
-  private final ShipmentOrderMainRepository shipmentOrderMainRepository;
+    private final PaymentOrderMainRepository paymentOrderMainRepository;
 
-  private final ProductInOrderMainRepository productInOrderMainRepository;
+    private final ShipmentOrderMainRepository shipmentOrderMainRepository;
 
-  private final ProductInCartRepository productInCartRepository;
+    private final OrderMainMapper orderMainMapper;
 
-  private final OrderMainMapper orderMainMapper;
+    private User currentLoggedUser;
 
-  private User currentLoggedUser;
+    public OrderMainServiceImpl(
+        OrderMainRepository orderMainRepository,
+        OrderMainMapper orderMainMapper,
+        UserRepository userRepository,
+        PaymentOrderMainRepository paymentOrderMainRepository,
+        ShipmentOrderMainRepository shipmentOrderMainRepository,
+        ProductInOrderMainRepository productInOrderMainRepository,
+        ProductInCartRepository productInCartRepository,
+        CartRepository cartRepository
+    ) {
+        this.orderMainRepository = orderMainRepository;
+        this.orderMainMapper = orderMainMapper;
+        this.userRepository = userRepository;
+        this.paymentOrderMainRepository = paymentOrderMainRepository;
+        this.shipmentOrderMainRepository = shipmentOrderMainRepository;
+        this.cartRepository = cartRepository;
+    }
 
+    @Override
+    @Transactional
+    public OrderMainDTO save(OrderMainDTO orderMainDto) {
+        OrderMain orderMain = orderMainMapper.toEntity(orderMainDto);
+        setProperOrderMainStatus(orderMain);
+        setCurrentUserToNewOrderMain(orderMain);
+        setProductsFromCartToNewOrderMain(orderMain);
+        deleteProductsFromCart();
+        createPaymentOrderMain(orderMain);
+        createShipmentOrderMain(orderMain);
+        setAmountsOfCartZero();
+        setAmountsOfOrderZero();
+        return orderMainMapper.toDto(orderMain);
+    }
 
-  public OrderMainServiceImpl(OrderMainRepository orderMainRepository,
-      OrderMainMapper orderMainMapper, UserRepository userRepository,
-      PaymentOrderMainRepository paymentOrderMainRepository,
-      ShipmentOrderMainRepository shipmentOrderMainRepository,
-      ProductInOrderMainRepository productInOrderMainRepository,
-      ProductInCartRepository productInCartRepository,
-      CartRepository cartRepository) {
-    this.orderMainRepository = orderMainRepository;
-    this.orderMainMapper = orderMainMapper;
-    this.userRepository = userRepository;
-    this.paymentOrderMainRepository = paymentOrderMainRepository;
-    this.shipmentOrderMainRepository = shipmentOrderMainRepository;
-    this.productInOrderMainRepository = productInOrderMainRepository;
-    this.productInCartRepository = productInCartRepository;
-    this.cartRepository = cartRepository;
-  }
+    @Override
+    @Transactional
+    public Optional<OrderMainDTO> partialUpdate(OrderMainDTO orderMainDto) {
+        log.debug("Request to partially update OrderMain : {}", orderMainDto);
 
+        return orderMainRepository
+            .findById(orderMainDto.getId())
+            .map(existingOrderMain -> {
+                orderMainMapper.partialUpdate(existingOrderMain, orderMainDto);
 
-  @Override
-  @Transactional
-  public OrderMainDTO save(OrderMainDTO orderMainDto) {
-    OrderMain orderMain = orderMainMapper.toEntity(orderMainDto);
-    setProperOrderMainStatus(orderMain);
-    setCurrentUserToNewOrderMain(orderMain);
-    setProductsFromCartToNewOrderMain(orderMain);
-    deleteProductsFromCart();
-    createPaymentOrderMain(orderMain);
-    createShipmentOrderMain(orderMain);
-    setAmountsOfCartZero();
-    setAmountsOfOrderZero();
-    return orderMainMapper.toDto(orderMain);
-  }
+                return existingOrderMain;
+            })
+            .map(orderMainRepository::save)
+            .map(orderMainMapper::toDto);
+    }
 
-  @Override
-  @Transactional
-  public Optional<OrderMainDTO> partialUpdate(OrderMainDTO orderMainDto) {
-    log.debug("Request to partially update OrderMain : {}", orderMainDto);
+    private void setCurrentUserToNewOrderMain(OrderMain orderMain) {
+        currentLoggedUser = checkIfUserExist();
 
-    return orderMainRepository
-        .findById(orderMainDto.getId())
-        .map(existingOrderMain -> {
-          orderMainMapper.partialUpdate(existingOrderMain, orderMainDto);
+        orderMain.setBuyerLogin(currentLoggedUser.getLogin());
+        orderMain.setBuyerFirstName(currentLoggedUser.getFirstName());
+        orderMain.setBuyerLastName(currentLoggedUser.getLastName());
+        orderMain.setBuyerEmail(currentLoggedUser.getEmail());
+        orderMain.setAmountOfCartNet(currentLoggedUser.getCart().getAmountOfCartNet());
+        orderMain.setAmountOfCartGross(currentLoggedUser.getCart().getAmountOfCartGross());
+        orderMain.setAmountOfShipmentNet(currentLoggedUser.getCart().getAmountOfShipmentNet());
+        orderMain.setAmountOfShipmentGross(currentLoggedUser.getCart().getAmountOfShipmentGross());
+        orderMain.setAmountOfOrderNet(currentLoggedUser.getCart().getAmountOfOrderNet());
+        orderMain.setAmountOfOrderGross(currentLoggedUser.getCart().getAmountOfOrderGross());
+        orderMainRepository.save(orderMain);
+    }
 
-          return existingOrderMain;
-        })
-        .map(orderMainRepository::save)
-        .map(orderMainMapper::toDto);
-  }
+    private void setProperOrderMainStatus(OrderMain orderMain) {
+        currentLoggedUser = checkIfUserExist();
 
-  private void setCurrentUserToNewOrderMain(OrderMain orderMain) {
-    currentLoggedUser = checkIfUserExist();
+        orderMain.setOrderMainStatus(
+            OrderMainStatusEnum.valueOf(String.valueOf(currentLoggedUser.getCart().getPaymentCart().getPaymentStatus()))
+        );
+    }
 
-    orderMain.setBuyerLogin(currentLoggedUser.getLogin());
-    orderMain.setBuyerFirstName(currentLoggedUser.getFirstName());
-    orderMain.setBuyerLastName(currentLoggedUser.getLastName());
-    orderMain.setBuyerEmail(currentLoggedUser.getEmail());
-    orderMain.setAmountOfCartNet(currentLoggedUser.getCart().getAmountOfCartNet());
-    orderMain.setAmountOfCartGross(currentLoggedUser.getCart().getAmountOfCartGross());
-    orderMain.setAmountOfShipmentNet(currentLoggedUser.getCart().getAmountOfShipmentNet());
-    orderMain.setAmountOfShipmentGross(currentLoggedUser.getCart().getAmountOfShipmentGross());
-    orderMain.setAmountOfOrderNet(currentLoggedUser.getCart().getAmountOfOrderNet());
-    orderMain.setAmountOfOrderGross(currentLoggedUser.getCart().getAmountOfOrderGross());
-    orderMainRepository.save(orderMain);
-  }
+    private void createPaymentOrderMain(OrderMain orderMain) {
+        currentLoggedUser = checkIfUserExist();
 
-  private void setProperOrderMainStatus(OrderMain orderMain) {
-    currentLoggedUser = checkIfUserExist();
+        PaymentOrderMain paymentOrderMain = new PaymentOrderMain();
 
-    orderMain.setOrderMainStatus(OrderMainStatusEnum.valueOf(
-        String.valueOf(currentLoggedUser.getCart().getPaymentCart().getPaymentStatus())));
-  }
+        paymentOrderMain.setName(currentLoggedUser.getCart().getPaymentCart().getName());
+        paymentOrderMain.setPriceNet(currentLoggedUser.getCart().getPaymentCart().getPriceNet());
+        paymentOrderMain.setVat(currentLoggedUser.getCart().getPaymentCart().getVat());
+        paymentOrderMain.setPriceGross(currentLoggedUser.getCart().getPaymentCart().getPriceGross());
+        paymentOrderMain.setOrderMain(orderMain);
 
-  private void createPaymentOrderMain(OrderMain orderMain) {
-    currentLoggedUser = checkIfUserExist();
+        paymentOrderMainRepository.save(paymentOrderMain);
+        orderMain.setPaymentOrderMain(paymentOrderMain);
+    }
 
-    PaymentOrderMain paymentOrderMain = new PaymentOrderMain();
+    private void createShipmentOrderMain(OrderMain orderMain) {
+        currentLoggedUser = checkIfUserExist();
 
-    paymentOrderMain.setName(currentLoggedUser.getCart().getPaymentCart().getName());
-    paymentOrderMain.setPriceNet(currentLoggedUser.getCart().getPaymentCart().getPriceNet());
-    paymentOrderMain.setVat(currentLoggedUser.getCart().getPaymentCart().getVat());
-    paymentOrderMain.setPriceGross(currentLoggedUser.getCart().getPaymentCart().getPriceGross());
-    paymentOrderMain.setOrderMain(orderMain);
+        ShipmentOrderMain shipmentOrderMain = new ShipmentOrderMain();
 
-    paymentOrderMainRepository.save(paymentOrderMain);
-    orderMain.setPaymentOrderMain(paymentOrderMain);
-  }
+        shipmentOrderMain.setFirstName(currentLoggedUser.getCart().getShipmentCart().getFirstName());
+        shipmentOrderMain.setLastName(currentLoggedUser.getCart().getShipmentCart().getLastName());
+        shipmentOrderMain.setStreet(currentLoggedUser.getCart().getShipmentCart().getStreet());
+        shipmentOrderMain.setPostalCode(currentLoggedUser.getCart().getShipmentCart().getPostalCode());
+        shipmentOrderMain.setCity(currentLoggedUser.getCart().getShipmentCart().getCity());
+        shipmentOrderMain.setCountry(currentLoggedUser.getCart().getShipmentCart().getCountry());
+        shipmentOrderMain.setPhoneToTheReceiver(currentLoggedUser.getCart().getShipmentCart().getPhoneToTheReceiver());
+        shipmentOrderMain.setFirm(currentLoggedUser.getCart().getShipmentCart().getFirm());
+        shipmentOrderMain.setTaxNumber(currentLoggedUser.getCart().getShipmentCart().getTaxNumber());
+        shipmentOrderMain.setOrderMain(orderMain);
 
-  private void createShipmentOrderMain(OrderMain orderMain) {
-    currentLoggedUser = checkIfUserExist();
+        shipmentOrderMainRepository.save(shipmentOrderMain);
+        orderMain.setShipmentOrderMain(shipmentOrderMain);
+    }
 
-    ShipmentOrderMain shipmentOrderMain = new ShipmentOrderMain();
+    private void setProductsFromCartToNewOrderMain(OrderMain orderMain) {
+        currentLoggedUser = checkIfUserExist();
 
-    shipmentOrderMain.setFirstName(currentLoggedUser.getCart().getShipmentCart().getFirstName());
-    shipmentOrderMain.setLastName(currentLoggedUser.getCart().getShipmentCart().getLastName());
-    shipmentOrderMain.setStreet(currentLoggedUser.getCart().getShipmentCart().getStreet());
-    shipmentOrderMain.setPostalCode(currentLoggedUser.getCart().getShipmentCart().getPostalCode());
-    shipmentOrderMain.setCity(currentLoggedUser.getCart().getShipmentCart().getCity());
-    shipmentOrderMain.setCountry(currentLoggedUser.getCart().getShipmentCart().getCountry());
-    shipmentOrderMain.setPhoneToTheReceiver(
-        currentLoggedUser.getCart().getShipmentCart().getPhoneToTheReceiver());
-    shipmentOrderMain.setFirm(currentLoggedUser.getCart().getShipmentCart().getFirm());
-    shipmentOrderMain.setTaxNumber(currentLoggedUser.getCart().getShipmentCart().getTaxNumber());
-    shipmentOrderMain.setOrderMain(orderMain);
+        currentLoggedUser
+            .getCart()
+            .getProductInCarts()
+            .forEach(productInCart -> {
+                ProductInOrderMain productInOrderMain = new ProductInOrderMain();
+                OrderMain orderMainForLoop = orderMain;
 
-    shipmentOrderMainRepository.save(shipmentOrderMain);
-    orderMain.setShipmentOrderMain(shipmentOrderMain);
-  }
+                productInOrderMain.setCategory(productInCart.getCategory());
+                productInOrderMain.setName(productInCart.getName());
+                productInOrderMain.setQuantity(productInCart.getQuantity());
+                productInOrderMain.setPriceNet(productInCart.getPriceNet());
+                productInOrderMain.setVat(productInCart.getVat());
+                productInOrderMain.setPriceGross(productInCart.getPriceGross());
+                productInOrderMain.setTotalPriceNet(productInCart.getTotalPriceNet());
+                productInOrderMain.setTotalPriceGross(productInCart.getTotalPriceGross());
+                productInOrderMain.setStock(productInCart.getStock());
+                productInOrderMain.setDescription(productInCart.getDescription());
+                productInOrderMain.setImage(productInCart.getImage());
+                productInOrderMain.setImageContentType(productInCart.getImageContentType());
+                productInOrderMain.setProductId(productInCart.getProductId());
+                productInOrderMain.setOrderMain(orderMainForLoop);
+                productInOrderMainRepository.save(productInOrderMain);
+                orderMainForLoop.addProductInOrderMain(productInOrderMain);
+            });
+    }
 
-  private void setProductsFromCartToNewOrderMain(OrderMain orderMain) {
-    currentLoggedUser = checkIfUserExist();
+    private void deleteProductsFromCart() {
+        currentLoggedUser = checkIfUserExist();
 
-    currentLoggedUser.getCart().getProductInCarts().forEach(productInCart -> {
-      ProductInOrderMain productInOrderMain = new ProductInOrderMain();
-      OrderMain orderMainForLoop = orderMain;
+        currentLoggedUser.getCart().getProductInCarts().forEach(productInCart -> productInCartRepository.deleteById(productInCart.getId()));
+    }
 
-      productInOrderMain.setCategory(productInCart.getCategory());
-      productInOrderMain.setName(productInCart.getName());
-      productInOrderMain.setQuantity(productInCart.getQuantity());
-      productInOrderMain.setPriceNet(productInCart.getPriceNet());
-      productInOrderMain.setVat(productInCart.getVat());
-      productInOrderMain.setPriceGross(productInCart.getPriceGross());
-      productInOrderMain.setTotalPriceNet(productInCart.getTotalPriceNet());
-      productInOrderMain.setTotalPriceGross(productInCart.getTotalPriceGross());
-      productInOrderMain.setStock(productInCart.getStock());
-      productInOrderMain.setDescription(productInCart.getDescription());
-      productInOrderMain.setImage(productInCart.getImage());
-      productInOrderMain.setImageContentType(productInCart.getImageContentType());
-      productInOrderMain.setProductId(productInCart.getProductId());
-      productInOrderMain.setOrderMain(orderMainForLoop);
-      productInOrderMainRepository.save(productInOrderMain);
-      orderMainForLoop.addProductInOrderMain(productInOrderMain);
-    });
-  }
+    private void setAmountsOfCartZero() {
+        currentLoggedUser = checkIfUserExist();
 
-  private void deleteProductsFromCart() {
-    currentLoggedUser = checkIfUserExist();
+        currentLoggedUser.getCart().setAmountOfCartNet(BigDecimal.ZERO);
+        currentLoggedUser.getCart().setAmountOfCartGross(BigDecimal.ZERO);
+        cartRepository.save(currentLoggedUser.getCart());
+    }
 
-    currentLoggedUser.getCart().getProductInCarts().forEach(productInCart ->
-        productInCartRepository.deleteById(productInCart.getId())
-    );
-  }
+    private void setAmountsOfOrderZero() {
+        currentLoggedUser = checkIfUserExist();
 
-  private void setAmountsOfCartZero() {
-    currentLoggedUser = checkIfUserExist();
+        currentLoggedUser.getCart().setAmountOfOrderNet(BigDecimal.ZERO);
+        currentLoggedUser.getCart().setAmountOfOrderGross(BigDecimal.ZERO);
+        cartRepository.save(currentLoggedUser.getCart());
+    }
 
-    currentLoggedUser.getCart().setAmountOfCartNet(BigDecimal.ZERO);
-    currentLoggedUser.getCart().setAmountOfCartGross(BigDecimal.ZERO);
-    cartRepository.save(currentLoggedUser.getCart());
-  }
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderMainDTO> getAllOrderMainByCurrentUserLogin() {
+        log.debug("Request to get all OrderMain by current user login");
+        return orderMainRepository
+            .getAllOrderMainByCurrentUserLogin()
+            .stream()
+            .map(orderMainMapper::toDto)
+            .collect(Collectors.toCollection(LinkedList::new));
+    }
 
-  private void setAmountsOfOrderZero() {
-    currentLoggedUser = checkIfUserExist();
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderMainDTO> findAll() {
+        log.debug("Request to get all OrderMains");
+        return orderMainRepository.findAll().stream().map(orderMainMapper::toDto).collect(Collectors.toCollection(LinkedList::new));
+    }
 
-    currentLoggedUser.getCart().setAmountOfOrderNet(BigDecimal.ZERO);
-    currentLoggedUser.getCart().setAmountOfOrderGross(BigDecimal.ZERO);
-    cartRepository.save(currentLoggedUser.getCart());
-  }
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<OrderMainDTO> findOne(Long id) {
+        log.debug("Request to get OrderMain : {}", id);
+        return orderMainRepository.findById(id).map(orderMainMapper::toDto);
+    }
 
-  @Override
-  @Transactional(readOnly = true)
-  public List<OrderMainDTO> getAllOrderMainByCurrentUserLogin() {
-    log.debug("Request to get all OrderMain by current user login");
-    return orderMainRepository.getAllOrderMainByCurrentUserLogin().stream()
-        .map(orderMainMapper::toDto)
-        .collect(Collectors.toCollection(LinkedList::new));
-  }
+    @Override
+    @Transactional
+    public void deleteOrderMainAndAllProductInOrdersByIdOrderMain(Long id) {
+        log.debug("Request to delete OrderMain and all productInOrderMain " + "by id OrderMain : {}", id);
+        orderMainRepository.deleteById(id);
+    }
 
-  @Override
-  @Transactional(readOnly = true)
-  public List<OrderMainDTO> findAll() {
-    log.debug("Request to get all OrderMains");
-    return orderMainRepository.findAll().stream()
-        .map(orderMainMapper::toDto)
-        .collect(Collectors.toCollection(LinkedList::new));
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Optional<OrderMainDTO> findOne(Long id) {
-    log.debug("Request to get OrderMain : {}", id);
-    return orderMainRepository.findById(id)
-        .map(orderMainMapper::toDto);
-  }
-
-  @Override
-  @Transactional
-  public void deleteOrderMainAndAllProductInOrdersByIdOrderMain(Long id) {
-    log.debug("Request to delete OrderMain and all productInOrderMain "
-        + "by id OrderMain : {}", id);
-    orderMainRepository.deleteById(id);
-  }
-
-  private User checkIfUserExist() {
-    return userRepository.findOneByLogin(SecurityUtils.getCurrentUserLogin()
-            .orElseThrow(UserNotFoundException::new))
-        .orElseThrow(UserNotFoundException::new);
-  }
+    private User checkIfUserExist() {
+        return userRepository
+            .findOneByLogin(SecurityUtils.getCurrentUserLogin().orElseThrow(UserNotFoundException::new))
+            .orElseThrow(UserNotFoundException::new);
+    }
 }

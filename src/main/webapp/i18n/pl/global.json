@@ -1,22 +1,12 @@
 {
   "global": {
-    "title": "infinityshopping",
+    "title": "Infinityshopping",
     "browsehappy": "Używasz <strong>przestarzałej</strong> przeglądarki. Proszę <a href=\"http://browsehappy.com/\">uaktualnij swoją przeglądarkę</a> aby poprawić wrażenia z użytkowania tej aplikacji.",
     "menu": {
       "home": "Strona domowa",
       "jhipster-needle-menu-add-element": "JHipster will add additional menu entries here (do not translate!)",
       "entities": {
         "main": "Encje",
-        "product": "Wszystkie produkty",
-        "cart": "Koszyk",
-        "payment": "Payment",
-        "paymentCart": "Sposób wysyłki",
-        "shipmentCart": "Adres wysyłki",
-        "productInCart": "Koszyk",
-        "orderMain": "Order Main",
-        "paymentOrderMain": "Payment Order Main",
-        "productInOrderMain": "Product In Order Main",
-        "shipmentOrderMain": "Shipment Order Main",
         "jhipster-needle-menu-add-entry": "JHipster will add additional entities here (do not translate!)"
       },
       "account": {
@@ -26,9 +16,7 @@
         "sessions": "Sesje",
         "login": "Autoryzacja",
         "logout": "Wyloguj",
-        "register": "Zarejestruj się",
-        "myAddressOfShipment": "Mój adres wysyłki",
-        "myOrders": "Moje zamówienia"        
+        "register": "Zarejestruj się"
       },
       "admin": {
         "main": "Administracja",
@@ -40,9 +28,6 @@
         "logs": "Logi",
         "apidocs": "API",
         "database": "Baza danych",
-        "productManagement": "Zarządzaj produktem",
-        "paymentManagement": "Zarządzaj płatnościami i wysyłką",
-        "orderMainManagement": "Zarządzaj zamówieniami",
         "jhipster-needle-menu-add-admin-element": "JHipster will add additional menu entries here (do not translate!)"
       },
       "language": "Język"
@@ -112,8 +97,6 @@
       "edit": "Edytuj",
       "open": "Otwórz",
       "save": "Zapisz",
-      "addToCart": "Dodaj do koszyka",
-      "editTheQuantityOfOrder": "Edytuj zamawianą ilość",
       "view": "Widok"
     },
     "detail": {
@@ -148,8 +131,6 @@
     "idnull": "Błędne ID",
     "idinvalid": "Invalid Id",
     "idnotfound": "ID cannot be found",
-    "fromYourCartAndWeDoNotHaveItYetCallUs": "Ktoś kupił jakiś produkt z twojego koszyka chwilę przed Tobą i my go już nie mamy skontaktuj się z nami",
-    "inStock": "Nie mamy tak dużej ilości na magazynie",
     "file": {
       "could.not.extract": "Could not extract file",
       "not.image": "File was expected to be an image but was found to be \"{{ fileType }}\""

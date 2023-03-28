@@ -2,17 +2,13 @@ package infinityshopping.online.app.web.rest;
 
 import static infinityshopping.online.app.web.rest.AccountResourceIT.TEST_USER_LOGIN;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import infinityshopping.online.app.IntegrationTest;
 import infinityshopping.online.app.config.Constants;
-import infinityshopping.online.app.domain.Cart;
 import infinityshopping.online.app.domain.User;
-import infinityshopping.online.app.domain.enumeration.PaymentStatusEnum;
 import infinityshopping.online.app.repository.AuthorityRepository;
-import infinityshopping.online.app.repository.CartRepository;
 import infinityshopping.online.app.repository.UserRepository;
 import infinityshopping.online.app.security.AuthoritiesConstants;
 import infinityshopping.online.app.service.UserService;
@@ -21,7 +17,6 @@ import infinityshopping.online.app.service.dto.PasswordChangeDTO;
 import infinityshopping.online.app.service.dto.UserDTO;
 import infinityshopping.online.app.web.rest.vm.KeyAndPasswordVM;
 import infinityshopping.online.app.web.rest.vm.ManagedUserVM;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -58,20 +53,6 @@ class AccountResourceIT {
 
     @Autowired
     private MockMvc restAccountMockMvc;
-
-    @Autowired
-    private CartRepository cartRepository;
-
-    private static final String DEFAULT_PAYMENT_CART_NAME = "DHL bank transfer";
-
-    private static final BigDecimal DEFAULT_PAYMENT_CART_PRICE_NET = new BigDecimal("3.0");
-
-    private static final BigDecimal DEFAULT_PAYMENT_CART_VAT = new BigDecimal("23");
-
-    private static final BigDecimal DEFAULT_PAYMENT_CART_PRICE_GROSS = new BigDecimal("3.69");
-
-    private static final PaymentStatusEnum DEFAULT_PAYMENT_STATUS_ENUM
-        = PaymentStatusEnum.WaitingForBankTransfer;
 
     @Test
     @WithUnauthenticatedMockUser
@@ -775,68 +756,5 @@ class AccountResourceIT {
                     .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
             )
             .andExpect(status().isInternalServerError());
-    }
-
-    @Test
-    @Transactional
-    public void afterRegisteringUserCartShipmentCartAndPaymentCartShouldBeCreated() throws Exception {
-        // given
-
-        int databaseSizeBeforeCreate = cartRepository.findAll().size();
-
-        ManagedUserVM firstUser = new ManagedUserVM();
-        firstUser.setId(15L);
-        firstUser.setLogin("alice");
-        firstUser.setPassword("password");
-        firstUser.setFirstName("Alice");
-        firstUser.setLastName("Something");
-        firstUser.setEmail("alice@example.com");
-        firstUser.setImageUrl("http://placehold.it/50x50");
-        firstUser.setLangKey(Constants.DEFAULT_LANGUAGE);
-        firstUser.setAuthorities(Collections.singleton(AuthoritiesConstants.USER));
-
-        // when
-        restAccountMockMvc.perform(
-                post("/api/register")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(TestUtil.convertObjectToJsonBytes(firstUser)))
-            .andExpect(status().isCreated());
-
-        // then
-        User user = new User();
-        user = userRepository.findOneByLogin("alice").get();
-
-        // Validate the Cart in database
-        List<Cart> cartList = cartRepository.findAll();
-        Cart testCart = cartList.get(cartList.size() - 1);
-        assertThat(cartList).hasSize(databaseSizeBeforeCreate + 1);
-        assertNotNull(testCart.getId());
-        assertThat(testCart.getAmountOfCartNet()).isEqualTo(BigDecimal.ZERO);
-        assertThat(testCart.getAmountOfCartGross()).isEqualTo(BigDecimal.ZERO);
-        assertThat(testCart.getAmountOfShipmentNet())
-            .isEqualTo(DEFAULT_PAYMENT_CART_PRICE_NET);
-        assertThat(testCart.getAmountOfShipmentGross())
-            .isEqualTo(DEFAULT_PAYMENT_CART_PRICE_GROSS);
-        assertThat(testCart.getAmountOfOrderNet())
-            .isEqualTo(DEFAULT_PAYMENT_CART_PRICE_NET);
-        assertThat(testCart.getAmountOfShipmentGross())
-            .isEqualTo(DEFAULT_PAYMENT_CART_PRICE_GROSS);
-        assertThat(testCart.getUser().getId()).isEqualTo(user.getId());
-
-        // Validate the PaymentCart in database
-        assertThat(testCart.getId()).isEqualTo(testCart.getPaymentCart().getCart().getId());
-        assertThat(testCart.getPaymentCart().getName())
-            .isEqualTo(DEFAULT_PAYMENT_CART_NAME);
-        assertThat(testCart.getPaymentCart().getPriceNet())
-            .isEqualTo(DEFAULT_PAYMENT_CART_PRICE_NET);
-        assertThat(testCart.getPaymentCart().getVat())
-            .isEqualTo(DEFAULT_PAYMENT_CART_VAT);
-        assertThat(testCart.getPaymentCart().getPriceGross())
-            .isEqualTo(DEFAULT_PAYMENT_CART_PRICE_GROSS);
-        assertThat(testCart.getPaymentCart().getPaymentStatus())
-            .isEqualTo(DEFAULT_PAYMENT_STATUS_ENUM);
-
-        // Validate the ShipmentCart in database
-        assertThat(testCart.getId()).isEqualTo(testCart.getShipmentCart().getCart().getId());
     }
 }

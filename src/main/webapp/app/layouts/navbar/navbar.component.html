@@ -1,7 +1,8 @@
 <nav data-cy="navbar" class="navbar navbar-light navbar-expand-md bg-light">
   <a class="navbar-brand logo" routerLink="/" (click)="collapseNavbar()">
     <span class="logo-img"></span>
-    <span jhiTranslate="global.title" class="navbar-title">infinityshopping</span>
+    <span jhiTranslate="global.title" class="navbar-title">Infinityshopping</span>
+    <span class="navbar-version">{{ version }}</span>
   </a>
   <a
     class="navbar-toggler d-lg-none"
@@ -25,20 +26,25 @@
           </span>
         </a>
       </li>
-      <li class="nav-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <a class="nav-link" routerLink="product" (click)="collapseNavbar()">
+      <!-- jhipster-needle-add-element-to-menu - JHipster will add new menu items here -->
+      <li
+        *ngSwitchCase="true"
+        ngbDropdown
+        class="nav-item dropdown pointer"
+        display="dynamic"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        <a class="nav-link dropdown-toggle" ngbDropdownToggle href="javascript:void(0);" id="entity-menu" data-cy="entity">
           <span>
-            <span jhiTranslate="global.menu.entities.product">All products</span>
+            <fa-icon icon="th-list"></fa-icon>
+            <span jhiTranslate="global.menu.entities.main">Entities</span>
           </span>
         </a>
+        <ul class="dropdown-menu" ngbDropdownMenu aria-labelledby="entity-menu">
+          <!-- jhipster-needle-add-entity-to-menu - JHipster will add entities to the menu here -->
+        </ul>
       </li>
-      <li class="nav-item" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <a class="nav-link" routerLink="product-in-cart">
-          <fa-icon icon="shopping-cart"></fa-icon>
-          <span jhiTranslate="global.menu.entities.productInCart">Cart</span>
-        </a>
-      </li>
-      <!-- jhipster-needle-add-element-to-menu - JHipster will add new menu items here -->
       <li
         *jhiHasAnyAuthority="'ROLE_ADMIN'"
         ngbDropdown
@@ -91,30 +97,6 @@
             </a>
           </li>
           <!-- jhipster-needle-add-element-to-admin-menu - JHipster will add entities to the admin menu here -->
-          <li *ngIf="!inProduction">
-            <a class="dropdown-item" href="./h2-console/" target="_tab" (click)="collapseNavbar()">
-              <fa-icon icon="database" [fixedWidth]="true"></fa-icon>
-              <span jhiTranslate="global.menu.admin.database">Database</span>
-            </a>
-          </li>
-          <li>
-            <a class="dropdown-item" routerLink="product/product-management" routerLinkActive="active" (click)="collapseNavbar()">
-              <fa-icon icon="cogs" [fixedWidth]="true"></fa-icon>
-              <span jhiTranslate="global.menu.admin.productManagement">Product management</span>
-            </a>
-          </li>
-          <li>
-            <a class="dropdown-item" routerLink="payment/payment-management" routerLinkActive="active" (click)="collapseNavbar()">
-              <fa-icon icon="cogs" [fixedWidth]="true"></fa-icon>
-              <span jhiTranslate="global.menu.admin.paymentManagement">Payment management</span>
-            </a>
-          </li>
-          <li>
-            <a class="dropdown-item" routerLink="order-main/order-main-management" routerLinkActive="active" (click)="collapseNavbar()">
-              <fa-icon icon="cogs" [fixedWidth]="true"></fa-icon>
-              <span jhiTranslate="global.menu.admin.orderMainManagement">Order management</span>
-            </a>
-          </li>
         </ul>
       </li>
       <li ngbDropdown class="nav-item dropdown pointer" display="dynamic" *ngIf="languages && languages.length > 1">
@@ -169,26 +151,6 @@
             >
               <fa-icon icon="lock" [fixedWidth]="true"></fa-icon>
               <span jhiTranslate="global.menu.account.password">Password</span>
-            </a>
-          </li>
-          <li *ngSwitchCase="true">
-            <a class="dropdown-item"
-             routerLink="order-main" 
-             routerLinkActive="active" 
-             (click)="collapseNavbar()"
-             >
-              <fa-icon icon="paperclip" [fixedWidth]="true"></fa-icon>
-              <span jhiTranslate="global.menu.account.myOrders">My orders</span>
-            </a>
-          </li>
-          <li *ngSwitchCase="true">
-            <a 
-            class="dropdown-item" 
-            routerLink="shipment-cart" 
-            routerLinkActive="active"
-            (click)="collapseNavbar()">
-                <fa-icon icon="address-card" [fixedWidth]="true"></fa-icon>
-                <span jhiTranslate="global.menu.account.myAddressOfShipment">My address of shipment</span>
             </a>
           </li>
           <li *ngSwitchCase="true">

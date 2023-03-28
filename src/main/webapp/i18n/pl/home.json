@@ -1,19 +1,10 @@
 {
   "home": {
-    "title": "Witamy w infinityshopping!",
-    "subtitle": "Wybierz spośród 21 szablonów sklepu (wszystko się zmieni w całym wyglądzie, przyciski, tło itd.) potem zaprojektuj tą stronę główną i sklep e-commerce będzie twój",
+    "title": "Witamy, Java Hipsterze!",
+    "subtitle": "To jest twoja strona domowa",
     "logged": {
       "message": "Jesteś zalogowany jako użytkownik \"{{username}}\"."
     },
-    "moreInformation": "Więcej informacji o InfinityShopping:",
-    "infinityShoppingLink": {
-      "homepage": "Strona domowa InfinityShopping",
-      "gitHub": "InfinityShopping na GitHub",
-      "exampleShopPage": "Strona internetowa przykładowego sklepu InfinityShopping",
-      "exampleShopGitHub": "GitHub przykładowego sklepu InfinityShopping",
-      "youTube": "YouTube"
-    },
-    "likeInfinityShopping": "Jeśli lubisz InfinityShopping, nie zapomnij dać nam gwiazdki na na GitHub!",
     "question": "Jeśli masz jakiekolwiek pytania na temat JHipster:",
     "link": {
       "homepage": "Strona domowa JHipster",
@@ -23,6 +14,6 @@
       "follow": "skontaktuj się z @jhipster na Twitterze"
     },
     "like": "Jeśli lubisz JHipster, nie zapomnij dać nam gwiazdki na",
-    "github": "GitHub"
+    "github": "GitHubie"
   }
 }

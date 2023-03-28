@@ -1,19 +1,10 @@
 {
   "home": {
-    "title": "Welcome to infinityshopping!",
-    "subtitle": "Choose from 21 store templates (everything will change in the whole design, buttons, background, etc.) then design this home page and an e-commerce shop is going to be yours.",
+    "title": "Welcome, Java Hipster!",
+    "subtitle": "This is your homepage",
     "logged": {
       "message": "You are logged in as user \"{{username}}\"."
     },
-    "moreInformation": "More information about InfinityShopping:",
-    "infinityShoppingLink": {
-      "homepage": "InfinityShopping homepage",
-      "gitHub": "InfinityShopping on GitHub",
-      "exampleShopPage": "Website of example shop of InfinityShopping",
-      "exampleShopGitHub": "GitHub of example shop of InfinityShopping",
-      "youTube": "YouTube"
-    },
-    "likeInfinityShopping": "If you like InfinityShopping, don't forget to give us a star on GitHub!",
     "question": "If you have any question on JHipster:",
     "link": {
       "homepage": "JHipster homepage",

@@ -28,8 +28,7 @@ public class User extends AbstractAuditingEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
@@ -92,22 +91,6 @@ public class User extends AbstractAuditingEntity implements Serializable {
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
     @BatchSize(size = 20)
     private Set<Authority> authorities = new HashSet<>();
-
-    @OneToOne(mappedBy = "user", orphanRemoval = true)
-    private Cart cart;
-
-    public Cart getCart() {
-        return cart;
-    }
-
-    public User cart(Cart cart) {
-        this.cart = cart;
-        return this;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
-    }
 
     public Long getId() {
         return id;

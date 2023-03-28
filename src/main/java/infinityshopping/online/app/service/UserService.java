@@ -2,21 +2,13 @@ package infinityshopping.online.app.service;
 
 import infinityshopping.online.app.config.Constants;
 import infinityshopping.online.app.domain.Authority;
-import infinityshopping.online.app.domain.Cart;
-import infinityshopping.online.app.domain.PaymentCart;
-import infinityshopping.online.app.domain.ShipmentCart;
 import infinityshopping.online.app.domain.User;
-import infinityshopping.online.app.domain.enumeration.PaymentStatusEnum;
 import infinityshopping.online.app.repository.AuthorityRepository;
-import infinityshopping.online.app.repository.CartRepository;
-import infinityshopping.online.app.repository.PaymentCartRepository;
-import infinityshopping.online.app.repository.ShipmentCartRepository;
 import infinityshopping.online.app.repository.UserRepository;
 import infinityshopping.online.app.security.AuthoritiesConstants;
 import infinityshopping.online.app.security.SecurityUtils;
 import infinityshopping.online.app.service.dto.AdminUserDTO;
 import infinityshopping.online.app.service.dto.UserDTO;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -49,27 +41,16 @@ public class UserService {
 
     private final CacheManager cacheManager;
 
-    private final CartRepository cartRepository;
-
-    private final PaymentCartRepository paymentCartRepository;
-
-    private final ShipmentCartRepository shipmentCartRepository;
-
     public UserService(
         UserRepository userRepository,
         PasswordEncoder passwordEncoder,
         AuthorityRepository authorityRepository,
-        CacheManager cacheManager,
-        CartRepository cartRepository,
-        PaymentCartRepository paymentCartRepository,
-        ShipmentCartRepository shipmentCartRepository) {
+        CacheManager cacheManager
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authorityRepository = authorityRepository;
         this.cacheManager = cacheManager;
-        this.cartRepository = cartRepository;
-        this.paymentCartRepository = paymentCartRepository;
-        this.shipmentCartRepository = shipmentCartRepository;
     }
 
     public Optional<User> activateRegistration(String key) {
@@ -151,9 +132,6 @@ public class UserService {
         userRepository.save(newUser);
         this.clearUserCaches(newUser);
         log.debug("Created Information for User: {}", newUser);
-
-        createCartPaymentCartAndShipmentCartForNewUser(newUser);
-
         return newUser;
     }
 
@@ -344,60 +322,4 @@ public class UserService {
             Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evict(user.getEmail());
         }
     }
-
-    public void createCartPaymentCartAndShipmentCartForNewUser(User newUser) {
-        Cart cart = new Cart();
-        cart.setUser(newUser);
-        cart.setAmountOfCartNet(BigDecimal.ZERO);
-        cart.setAmountOfCartGross(BigDecimal.ZERO);
-        cart.setAmountOfShipmentNet(BigDecimal.ZERO);
-        cart.setAmountOfShipmentGross(BigDecimal.ZERO);
-        cart.setAmountOfOrderNet(BigDecimal.ZERO);
-        cart.setAmountOfOrderGross(BigDecimal.ZERO);
-        cartRepository.save(cart);
-        newUser.setCart(cart);
-
-        createPaymentCartForNewUser(cart);
-    }
-
-    private void createPaymentCartForNewUser(Cart cart) {
-        PaymentCart paymentCart = new PaymentCart();
-
-        paymentCart.setName("DHL bank transfer");
-        paymentCart.setPriceNet(new BigDecimal("3.0"));
-        paymentCart.setVat(new BigDecimal("23"));
-        paymentCart.setPriceGross(new BigDecimal("3.69"));
-        paymentCart.setPaymentStatus(PaymentStatusEnum.WaitingForBankTransfer);
-        paymentCart.setCart(cart);
-
-        paymentCartRepository.save(paymentCart);
-
-        cart.setPaymentCart(paymentCart);
-        cart.setAmountOfShipmentNet(paymentCart.getPriceNet());
-        cart.setAmountOfShipmentGross(paymentCart.getPriceGross());
-        cart.setAmountOfOrderNet(paymentCart.getPriceNet());
-        cart.setAmountOfOrderGross(paymentCart.getPriceGross());
-        cartRepository.save(cart);
-
-        createShipmentCartForNewUser(cart);
-    }
-
-    public void createShipmentCartForNewUser(Cart cart) {
-       ShipmentCart shipmentCart = new ShipmentCart();
-
-       shipmentCart.setFirstName("");
-       shipmentCart.setLastName("");
-       shipmentCart.setFirm("");
-       shipmentCart.setStreet("");
-       shipmentCart.setPostalCode("");
-       shipmentCart.setCity("");
-       shipmentCart.setCountry("");
-       shipmentCart.setPhoneToTheReceiver("");
-
-       shipmentCart.setCart(cart);
-       shipmentCartRepository.save(shipmentCart);
-
-       cart.setShipmentCart(shipmentCart);
-       cartRepository.save(cart);
-  }
 }
